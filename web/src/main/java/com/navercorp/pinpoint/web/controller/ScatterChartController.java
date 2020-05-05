@@ -21,6 +21,7 @@ import com.navercorp.pinpoint.common.util.DateUtils;
 import com.navercorp.pinpoint.common.profiler.util.TransactionId;
 import com.navercorp.pinpoint.common.profiler.util.TransactionIdComparator;
 import com.navercorp.pinpoint.common.profiler.util.TransactionIdUtils;
+import com.navercorp.pinpoint.web.filter.AcceptUrlFilter;
 import com.navercorp.pinpoint.web.filter.Filter;
 import com.navercorp.pinpoint.web.filter.FilterBuilder;
 import com.navercorp.pinpoint.web.scatter.ScatterData;
@@ -152,6 +153,7 @@ public class ScatterChartController {
             @RequestParam("limit") int limit,
             @RequestParam(value = "backwardDirection", required = false, defaultValue = "true") boolean backwardDirection,
             @RequestParam(value = "filter", required = false) String filterText,
+            @RequestParam(value = "urlPattern", required = false) String urlPattern,
             @RequestParam(value = "_callback", required = false) String jsonpCallback,
             @RequestParam(value = "v", required = false, defaultValue = "1") int version) {
         if (xGroupUnit <= 0) {
@@ -168,13 +170,14 @@ public class ScatterChartController {
 
         // TODO range check verification exception occurs. "from" is bigger than "to"
         final Range range = Range.createUncheckedRange(from, to);
-        logger.debug("fetch scatter data. RANGE={}, X-Group-Unit:{}, Y-Group-Unit:{}, LIMIT={}, BACKWARD_DIRECTION:{}, FILTER:{}", range, xGroupUnit, yGroupUnit, limit, backwardDirection, filterText);
+        logger.debug("fetch scatter data. RANGE={}, X-Group-Unit:{}, Y-Group-Unit:{}, LIMIT={}, BACKWARD_DIRECTION:{}, FILTER:{}, URL_PATTERN:{}",
+                range, xGroupUnit, yGroupUnit, limit, backwardDirection, filterText, urlPattern);
 
         ModelAndView mv;
-        if (StringUtils.isEmpty(filterText)) {
+        if (StringUtils.isEmpty(filterText) && StringUtils.isEmpty(urlPattern)) {
             mv = selectScatterData(applicationName, range, xGroupUnit, Math.max(yGroupUnit, 1), limit, backwardDirection, version);
         } else {
-            mv = selectFilterScatterData(applicationName, range, xGroupUnit, Math.max(yGroupUnit, 1), limit, backwardDirection, filterText, version);
+            mv = selectFilterScatterData(applicationName, range, xGroupUnit, Math.max(yGroupUnit, 1), limit, backwardDirection, filterText, urlPattern, version);
         }
 
         if (jsonpCallback == null) {
@@ -209,7 +212,12 @@ public class ScatterChartController {
         return mv;
     }
 
-    private ModelAndView selectFilterScatterData(String applicationName, Range range, int xGroupUnit, int yGroupUnit, int limit, boolean backwardDirection, String filterText, int version) {
+    private ModelAndView selectFilterScatterData(String applicationName, Range range,
+                                                 int xGroupUnit, int yGroupUnit,
+                                                 int limit, boolean backwardDirection,
+                                                 String filterText, String urlPattern,
+                                                 int version) {
+
         final LimitedScanResult<List<TransactionId>> limitedScanResult = flow.selectTraceIdsFromApplicationTraceIndex(applicationName, range, limit, backwardDirection);
 
         final List<TransactionId> transactionIdList = limitedScanResult.getScanData();
@@ -218,7 +226,11 @@ public class ScatterChartController {
         boolean requestComplete = transactionIdList.size() < limit;
 
         transactionIdList.sort(TransactionIdComparator.INSTANCE);
-        Filter<SpanBo> filter = filterBuilder.build(filterText);
+
+        Filter<SpanBo> filter = createSpanBoFilter(filterText, urlPattern);
+        if (logger.isDebugEnabled()) {
+            logger.debug("getScatterData uses {} as filter", filter);
+        }
 
         ModelAndView mv;
         if (version == 1) {
@@ -251,4 +263,14 @@ public class ScatterChartController {
         return mv;
     }
 
+    private Filter<SpanBo> createSpanBoFilter(String filterText, String urlPattern) {
+        if (StringUtils.isNotEmpty(filterText)) {
+            return filterBuilder.build(filterText);
+        } else if (StringUtils.isNotEmpty(urlPattern)) {
+            final AcceptUrlFilter urlFilter = new AcceptUrlFilter(urlPattern);
+            return urlFilter::accept;
+        } else {
+            throw new IllegalArgumentException("Either one of 'filterText' or 'urlPattern' must be present");
+        }
+    }
 }
