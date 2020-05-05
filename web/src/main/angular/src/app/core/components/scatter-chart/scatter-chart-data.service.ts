@@ -12,7 +12,7 @@ interface IScatterRequest {
     groupUnitX: number;
     groupUnitY: number;
     backwardDirection: boolean;
-    urlKey?: string;
+    urlPattern?: string;
 }
 
 @Injectable()
@@ -27,7 +27,7 @@ export class ScatterChartDataService {
     private application: string;
     private groupUnitX: number;
     private groupUnitY: number;
-    private urlKey: string;
+    private urlPattern: string;
     private innerDataRequest = new Subject<IScatterRequest>();
     private innerRealTimeDataRequest = new Subject<IScatterRequest>();
     private outScatterData = new Subject<IScatterData>();
@@ -81,7 +81,7 @@ export class ScatterChartDataService {
             params.groupUnitX,
             params.groupUnitY,
             params.backwardDirection,
-            params.urlKey)
+            params.urlPattern)
         );
     }
     private getData(fromX: number, toX: number, backwardDirection: boolean): void {
@@ -96,8 +96,8 @@ export class ScatterChartDataService {
         };
         return this.innerDataRequest.next(params);
     }
-    private getDataByFilter(fromX: number, toX: number, backwardDirection: boolean, urlKey: string): void {
-        if (urlKey && urlKey.trim() === '') {
+    private getDataByFilter(fromX: number, toX: number, backwardDirection: boolean, urlPattern: string): void {
+        if (urlPattern && urlPattern.trim() === '') {
             return this.getData(fromX, toX, backwardDirection);
         }
         this.requestTime = Date.now();
@@ -108,7 +108,7 @@ export class ScatterChartDataService {
             groupUnitX: this.groupUnitX,
             groupUnitY: this.groupUnitY,
             backwardDirection: backwardDirection,
-            urlKey: urlKey
+            urlPattern: urlPattern
         };
         return this.innerDataRequest.next(params);
     }
@@ -124,7 +124,7 @@ export class ScatterChartDataService {
         };
         return this.innerRealTimeDataRequest.next(params);
     }
-    loadData(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, initLastData?: boolean, urlKey?: string): void {
+    loadData(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, initLastData?: boolean, urlPattern?: string): void {
         this.application = application;
         this.groupUnitX = groupUnitX;
         this.groupUnitY = groupUnitY;
@@ -133,9 +133,9 @@ export class ScatterChartDataService {
             this.savedScatterData = new ReplaySubject<IScatterData>();
             this.savedScatterData$ = this.savedScatterData.asObservable();
         }
-        if (urlKey && urlKey.trim() !== '') {
-            this.urlKey = urlKey.trim();
-            this.getDataByFilter(fromX, toX, true, this.urlKey);
+        if (urlPattern && urlPattern.trim() !== '') {
+            this.urlPattern = urlPattern.trim();
+            this.getDataByFilter(fromX, toX, true, this.urlPattern);
         } else {
             this.getData(fromX, toX, true);
         }
@@ -203,8 +203,8 @@ export class ScatterChartDataService {
             });
         }
     }
-    private makeRequestOptionsArgs(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, backwardDirection: boolean, urlKey: string): object {
-        const keywrod = (urlKey && urlKey !== '') ? urlKey.trim() : '';
+    private makeRequestOptionsArgs(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, backwardDirection: boolean, urlPattern: string): object {
+        const keywrod = (urlPattern && urlPattern !== '') ? urlPattern.trim() : '';
         return {
             params: new HttpParams()
             .set('application', application)
@@ -215,7 +215,7 @@ export class ScatterChartDataService {
             .set('xGroupUnit', groupUnitX + '')
             .set('yGroupUnit', groupUnitY + '')
             .set('backwardDirection', backwardDirection + '')
-            .set('urlKey', keywrod)
+            .set('urlPattern', keywrod)
         };
     }
 }

@@ -51,7 +51,7 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
     toX: number;
     fromY: number;
     toY: number;
-    urlKey = '';
+    urlPattern = '';
     application: string;
     scatterChartMode: string;
     timezone: string;
@@ -97,7 +97,7 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
             this.scatterChartDataService.stopLoad();
             this.scatterChartMode = urlService.isRealTimeMode() ? ScatterChart.MODE.REALTIME : ScatterChart.MODE.STATIC;
             this.application = urlService.getPathValue(UrlPathId.APPLICATION).getKeyStr();
-            this.urlKey = urlService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLKEY);
+            this.urlPattern = urlService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLPATTERN);
             this.selectedAgent = '';
             this.currentRange.from = this.fromX = urlService.getStartTimeToNumber();
             this.currentRange.to = this.toX = urlService.getEndTimeToNumber();
@@ -115,7 +115,7 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
                     this.getGroupUnitX(),
                     this.getGroupUnitY(),
                     false,
-                    this.urlKey
+                    this.urlPattern
                 );
             }
             this.scatterChartInteractionService.addChartData(this.instanceKey, scatterData);
@@ -235,7 +235,7 @@ export class ScatterChartContainerComponent implements OnInit, OnDestroy {
             this.getGroupUnitX(),
             this.getGroupUnitY(),
             false,
-            this.urlKey
+            this.urlPattern
         );
         if (this.scatterChartMode === ScatterChart.MODE.REALTIME) {
             this.scatterChartDataService.loadRealTimeDataV2(this.toX);
