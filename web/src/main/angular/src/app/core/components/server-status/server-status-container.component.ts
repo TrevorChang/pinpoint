@@ -73,7 +73,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         const hasKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.has(UrlPathId.URLPATTERN);
         if (hasKeyword) {
             this.filterKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLPATTERN);
-            this.filterKeyword = decodeURIComponent(this.filterKeyword);
+            this.filterKeyword = decodeURI(this.filterKeyword);
         }
     }
 
@@ -123,7 +123,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
 
         this.urlRouteManagerService.moveOnPage({
             url: finalUrl,
-            queryParam: { urlPattern: encodeURIComponent(this.filterKeyword)}
+            queryParam: { urlPattern: encodeURI(this.filterKeyword)}
         });
     }
 }
