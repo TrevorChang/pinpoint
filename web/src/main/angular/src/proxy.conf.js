@@ -49,7 +49,8 @@ const PROXY_CONFIG = [
             "/admin/removeInactiveAgents.pinpoint",
             "/bind.pinpoint"
         ],
-        target: 'http://localhost:8080',
+        // target: 'http://localhost:4200/',
+        target: 'http://35.229.182.36:8079/',
         secure: false
     },
     {

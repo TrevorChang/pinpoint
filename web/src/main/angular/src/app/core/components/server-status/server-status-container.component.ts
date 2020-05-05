@@ -24,6 +24,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
     hasServerList = false;
     isWAS: boolean;
     spreadAngleIndicator: string;
+    filterKeyword: string;
 
     constructor(
         private storeHelperService: StoreHelperService,
@@ -96,5 +97,9 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         ).subscribe(([isRealTimeMode, selectedAgent]: [boolean, string]) => {
             this.urlRouteManagerService.openInspectorPage(isRealTimeMode, selectedAgent);
         });
+    }
+
+    onFliterByAPIKeyword(): void {
+        console.log('keyword = ' + this.filterKeyword);
     }
 }
