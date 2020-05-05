@@ -50,7 +50,7 @@ const PROXY_CONFIG = [
             "/bind.pinpoint"
         ],
         // target: 'http://localhost:4200/',
-        target: 'http://35.229.182.36:8079/',
+        target: 'http://10.206.79.173:8079/',
         secure: false
     },
     {

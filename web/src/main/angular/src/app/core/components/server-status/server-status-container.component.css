@@ -60,7 +60,7 @@ button:first-child {
     margin-left: 10px;
 }
 .l-search-input {
-    width: inherit;
+    width: calc(100% - 20px);
     height: 28px;
     border: 1px solid #d7dde4;
     border-radius: 4px;
@@ -70,12 +70,21 @@ button:first-child {
 }
 .l-status-filter {
     position: relative;
-    width: 180px;
+    width: 90%;
 }
 .l-status-filter .l-search-button {
     position: absolute;
     top: 50%;
-    right: 8px;
+    right: -1px;
+    -webkit-transform: translateY(-50%);
+    transform: translateY(-50%);
+    color: #a8acb5;
+    font-size: 1.15em;
+}
+.l-status-filter .l-clean-button {
+    position: absolute;
+    top: 50%;
+    right: 24px;
     -webkit-transform: translateY(-50%);
     transform: translateY(-50%);
     color: #a8acb5;

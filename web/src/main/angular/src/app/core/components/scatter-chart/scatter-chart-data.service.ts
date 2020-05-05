@@ -12,6 +12,7 @@ interface IScatterRequest {
     groupUnitX: number;
     groupUnitY: number;
     backwardDirection: boolean;
+    urlPattern?: string;
 }
 
 @Injectable()
@@ -26,6 +27,7 @@ export class ScatterChartDataService {
     private application: string;
     private groupUnitX: number;
     private groupUnitY: number;
+    private urlPattern: string;
     private innerDataRequest = new Subject<IScatterRequest>();
     private innerRealTimeDataRequest = new Subject<IScatterRequest>();
     private outScatterData = new Subject<IScatterData>();
@@ -78,7 +80,8 @@ export class ScatterChartDataService {
             params.toX,
             params.groupUnitX,
             params.groupUnitY,
-            params.backwardDirection)
+            params.backwardDirection,
+            params.urlPattern)
         );
     }
     private getData(fromX: number, toX: number, backwardDirection: boolean): void {
@@ -90,6 +93,22 @@ export class ScatterChartDataService {
             groupUnitX: this.groupUnitX,
             groupUnitY: this.groupUnitY,
             backwardDirection: backwardDirection
+        };
+        return this.innerDataRequest.next(params);
+    }
+    private getDataByFilter(fromX: number, toX: number, backwardDirection: boolean, urlPattern: string): void {
+        if (urlPattern && urlPattern.trim() === '') {
+            return this.getData(fromX, toX, backwardDirection);
+        }
+        this.requestTime = Date.now();
+        const params = {
+            application: this.application,
+            fromX: fromX,
+            toX: toX,
+            groupUnitX: this.groupUnitX,
+            groupUnitY: this.groupUnitY,
+            backwardDirection: backwardDirection,
+            urlPattern: urlPattern
         };
         return this.innerDataRequest.next(params);
     }
@@ -105,7 +124,7 @@ export class ScatterChartDataService {
         };
         return this.innerRealTimeDataRequest.next(params);
     }
-    loadData(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, initLastData?: boolean): void {
+    loadData(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, initLastData?: boolean, urlPattern?: string): void {
         this.application = application;
         this.groupUnitX = groupUnitX;
         this.groupUnitY = groupUnitY;
@@ -114,7 +133,12 @@ export class ScatterChartDataService {
             this.savedScatterData = new ReplaySubject<IScatterData>();
             this.savedScatterData$ = this.savedScatterData.asObservable();
         }
-        this.getData(fromX, toX, true);
+        if (urlPattern && urlPattern.trim() !== '') {
+            this.urlPattern = urlPattern.trim();
+            this.getDataByFilter(fromX, toX, true, this.urlPattern);
+        } else {
+            this.getData(fromX, toX, true);
+        }
     }
     private subscribeStaticRequest(scatterData: IScatterData): void {
         this.savedScatterData.next(scatterData);
@@ -179,17 +203,19 @@ export class ScatterChartDataService {
             });
         }
     }
-    private makeRequestOptionsArgs(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, backwardDirection: boolean): object {
+    private makeRequestOptionsArgs(application: string, fromX: number, toX: number, groupUnitX: number, groupUnitY: number, backwardDirection: boolean, urlPattern: string): object {
+        const keywrod = (urlPattern && urlPattern !== '') ? urlPattern.trim() : '';
         return {
             params: new HttpParams()
-                .set('application', application)
-                .set('from', fromX + '')
-                .set('to', toX + '')
-                .set('limit', '5000')
-                .set('filter', '')
-                .set('xGroupUnit', groupUnitX + '')
-                .set('yGroupUnit', groupUnitY + '')
-                .set('backwardDirection', backwardDirection + '')
+            .set('application', application)
+            .set('from', fromX + '')
+            .set('to', toX + '')
+            .set('limit', '5000')
+            .set('filter', '')
+            .set('xGroupUnit', groupUnitX + '')
+            .set('yGroupUnit', groupUnitY + '')
+            .set('backwardDirection', backwardDirection + '')
+            .set('urlPattern', keywrod)
         };
     }
 }

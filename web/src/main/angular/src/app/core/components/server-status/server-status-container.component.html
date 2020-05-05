@@ -10,9 +10,15 @@
     <div class="l-status-filter">
         <input class="l-search-input" type="text"
             [(ngModel)]="filterKeyword"
-            placeholder="Filter API keyword"
-            (keydown.enter)="onFliterByAPIKeyword()"
+            placeholder="Filter API Url Pattern"
+            (keyup.enter)="onFilterByUrlParttern()"
         >
-        <button class="l-search-button fas fa-filter" (click)="onFliterByAPIKeyword()"></button>
+        <button *ngIf="filterKeyword !== ''"
+            class="l-clean-button fas fa-times-circle"
+            (click)="onCleanKeyword()">
+        </button>
+        <button class="l-search-button fas fa-filter"
+            (click)="onFilterByUrlParttern()">
+        </button>
     </div>
 </div>
