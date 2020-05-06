@@ -11,8 +11,9 @@
         <input class="l-search-input" type="text"
             [(ngModel)]="filterKeyword"
             placeholder="Filter API Url Pattern"
-            (keyup.enter)="onFilterByUrlParttern()"
-        >
+            (keyup)="onCheckInputField($event)">
+            <!-- (keyup.enter)="onFilterByUrlParttern($event.target.value)"
+        > -->
         <button *ngIf="filterKeyword !== ''"
             class="l-clean-button fas fa-times-circle"
             (click)="onCleanKeyword()">
@@ -20,5 +21,8 @@
         <button class="l-search-button fas fa-filter"
             (click)="onFilterByUrlParttern()">
         </button>
+        <span *ngIf="errorMsg !== ''" class="warnning-text">
+            <i class="fas fa-exclamation-triangle"></i> {{ errorMsg }}
+        </span>
     </div>
 </div>

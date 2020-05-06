@@ -27,6 +27,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
     isWAS: boolean;
     spreadAngleIndicator: string;
     filterKeyword = '';
+    errorMsg = '';
 
     constructor(
         private storeHelperService: StoreHelperService,
@@ -112,10 +113,30 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
 
     onCleanKeyword(): void {
         this.filterKeyword = '';
-        this.onFilterByUrlParttern();
+        this.errorMsg = '';
     }
 
-    onFilterByUrlParttern(): void {
+    onCheckInputField(event: any): void {
+        const regex = /[a-zA-Z0-9\/\*]+/gy;
+        if (this.filterKeyword.trim() === '') {
+            this.errorMsg = '';
+            return;
+        }
+        if (event.key === 'Enter') {
+            return this.onFilterByUrlParttern(event.target.value);
+        }
+        if (regex.test(this.filterKeyword) === false) {
+            this.errorMsg = 'the URL Parttern has some error';
+        } else {
+            this.errorMsg = '';
+        }
+    }
+
+    onFilterByUrlParttern(value?: string): void {
+        if (this.errorMsg !== '') {
+            this.filterKeyword = (value !== undefined) ? value : '';
+            return;
+        }
         const startPath = this.newUrlStateNotificationService.getStartPath();
         const applicationPath = this.newUrlStateNotificationService.getPathValue(UrlPathId.APPLICATION).getUrlStr();
         const baseUrl = [startPath, applicationPath];
