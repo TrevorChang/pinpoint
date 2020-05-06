@@ -4,6 +4,8 @@ import { takeUntil, map, take } from 'rxjs/operators';
 
 import { Actions } from 'app/shared/store';
 import { UrlPathId } from 'app/shared/models';
+import { EndTime } from 'app/core/models/end-time';
+import { ServerTimeDataService } from 'app/shared/services/server-time-data.service';
 import { StoreHelperService, NewUrlStateNotificationService, UrlRouteManagerService, AnalyticsService, TRACKED_EVENT_LIST, MessageQueueService, MESSAGE_TO } from 'app/shared/services';
 import { ServerMapData } from 'app/core/components/server-map/class/server-map-data.class';
 // import { ScatterChartDataService } from 'app/core/components/scatter-chart/scatter-chart-data.service';
@@ -27,12 +29,14 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
     isWAS: boolean;
     spreadAngleIndicator: string;
     filterKeyword = '';
+    errorMsg = '';
 
     constructor(
         private storeHelperService: StoreHelperService,
         private newUrlStateNotificationService: NewUrlStateNotificationService,
         private urlRouteManagerService: UrlRouteManagerService,
         private analyticsService: AnalyticsService,
+        private serverTimeDataService: ServerTimeDataService,
         private cd: ChangeDetectorRef,
         private messageQueueService: MessageQueueService,
     ) {}
@@ -73,7 +77,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         const hasKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.has(UrlPathId.URLPATTERN);
         if (hasKeyword) {
             this.filterKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLPATTERN);
-            this.filterKeyword = decodeURI(this.filterKeyword);
+            this.filterKeyword = decodeURIComponent(this.filterKeyword);
         }
     }
 
@@ -112,18 +116,45 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
 
     onCleanKeyword(): void {
         this.filterKeyword = '';
-        this.onFilterByUrlParttern();
+        this.errorMsg = '';
     }
 
-    onFilterByUrlParttern(): void {
+    onCheckInputField(event: any): void {
+        const regex = /[a-zA-Z0-9\/\*]+/gy;
+        if (this.filterKeyword.trim() === '') {
+            this.errorMsg = '';
+            return;
+        }
+        if (event.key === 'Enter') {
+            return this.onFilterByUrlParttern(event.target.value);
+        }
+        if (regex.test(this.filterKeyword) === false) {
+            this.errorMsg = 'the URL Parttern has some error';
+        } else {
+            this.errorMsg = '';
+        }
+    }
+
+    onFilterByUrlParttern(value?: string): void {
+        if (this.errorMsg !== '') {
+            this.filterKeyword = (value !== undefined) ? value : '';
+            return;
+        }
         const startPath = this.newUrlStateNotificationService.getStartPath();
         const applicationPath = this.newUrlStateNotificationService.getPathValue(UrlPathId.APPLICATION).getUrlStr();
-        const baseUrl = [startPath, applicationPath];
-        const finalUrl = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [...baseUrl, this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : baseUrl;
+        const priod = this.newUrlStateNotificationService.getPathValue(UrlPathId.PERIOD).getValueWithTime();
 
-        this.urlRouteManagerService.moveOnPage({
-            url: finalUrl,
-            queryParam: { urlPattern: encodeURI(this.filterKeyword)}
+        this.serverTimeDataService.getServerTime().subscribe(time => {
+            const endTime = EndTime.formatDate(time);
+            const baseUrl = [startPath, applicationPath, priod, endTime];
+            const finalUrl  = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : [];
+
+            this.urlRouteManagerService.move({
+                url: baseUrl,
+                needServerTimeRequest: false,
+                nextUrl: finalUrl,
+                queryParam: { urlPattern: this.filterKeyword }
+            });
         });
     }
 }
