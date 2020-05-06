@@ -139,11 +139,14 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         }
         const startPath = this.newUrlStateNotificationService.getStartPath();
         const applicationPath = this.newUrlStateNotificationService.getPathValue(UrlPathId.APPLICATION).getUrlStr();
-        const baseUrl = [startPath, applicationPath];
-        const finalUrl = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [...baseUrl, this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : baseUrl;
+        const priod = this.newUrlStateNotificationService.getPathValue(UrlPathId.PERIOD).getValueWithTime();
+        const baseUrl = [startPath, applicationPath, priod];
+        const finalUrl  = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : [];
 
-        this.urlRouteManagerService.moveOnPage({
-            url: finalUrl,
+        this.urlRouteManagerService.move({
+            url: baseUrl,
+            needServerTimeRequest: true,
+            nextUrl: finalUrl,
             queryParam: { urlPattern: encodeURI(this.filterKeyword)}
         });
     }
