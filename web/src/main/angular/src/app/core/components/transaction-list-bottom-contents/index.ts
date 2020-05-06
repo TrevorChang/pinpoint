@@ -1,4 +1,6 @@
 import { NgModule } from '@angular/core';
+import { AgGridModule } from 'ag-grid-angular';
+import { AngularSplitModule } from 'angular-split';
 
 import { SharedModule } from 'app/shared';
 import { TransactionShortInfoModule } from 'app/core/components/transaction-short-info';
@@ -18,6 +20,8 @@ import { ServerErrorPopupModule } from 'app/core/components/server-error-popup';
         TransactionListBottomContentsContainerComponent
     ],
     imports: [
+        AgGridModule.withComponents([]),
+        AngularSplitModule,
         SharedModule,
         TransactionTableGridModule,
         TransactionShortInfoModule,

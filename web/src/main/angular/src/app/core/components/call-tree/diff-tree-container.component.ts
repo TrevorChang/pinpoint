@@ -17,14 +17,14 @@ import { MessagePopupContainerComponent } from 'app/core/components/message-popu
 import { SyntaxHighlightPopupContainerComponent } from 'app/core/components/syntax-highlight-popup/syntax-highlight-popup-container.component';
 
 @Component({
-    selector: 'pp-call-tree-container',
-    templateUrl: './call-tree-container.component.html',
+    selector: 'pp-diff-tree-container',
+    templateUrl: './diff-tree-container.component.html',
     styleUrls: ['./call-tree-container.component.css'],
 })
-export class CallTreeContainerComponent implements OnInit, OnDestroy {
-    @ViewChild(CallTreeComponent, {static: false}) private callTreeComponent: CallTreeComponent;
+export class DiffTreeContainerComponent implements OnInit, OnDestroy {
     @Input() canSelectRow = false;
     @Input() rowSelection = 'multiple';
+    @Input() mode = 'target';
 
     private unsubscribe = new Subject<void>();
 
@@ -32,12 +32,12 @@ export class CallTreeContainerComponent implements OnInit, OnDestroy {
     dateFormat$: Observable<string>;
     searchSelfTime: number;
     transactionInfo: ITransactionMetaData;
-    callTreeData$: Observable<ITransactionDetailData>;
+    diffTreeData$: Observable<ITransactionDetailData>;
+
     selectedRowId$: Observable<string>;
 
     constructor(
         private storeHelperService: StoreHelperService,
-        private transactionSearchInteractionService: TransactionSearchInteractionService,
         private analyticsService: AnalyticsService,
         private dynamicPopupService: DynamicPopupService,
         private componentFactoryResolver: ComponentFactoryResolver,
@@ -47,15 +47,6 @@ export class CallTreeContainerComponent implements OnInit, OnDestroy {
 
     ngOnInit() {
         this.connectStore();
-        this.transactionSearchInteractionService.onSearch$.pipe(
-            takeUntil(this.unsubscribe),
-            withLatestFrom(this.storeHelperService.getTransactionViewType(this.unsubscribe)),
-            filter(([_, viewType]: [ISearchParam, string]) => viewType === 'callTree'),
-            map(([params]) => params)
-        ).subscribe((params: ISearchParam) => {
-            this.transactionSearchInteractionService.setSearchResultCount(this.callTreeComponent.getQueryedRowCount(params));
-        });
-
         this.selectedRowId$ = this.messageQueueService.receiveMessage(this.unsubscribe, MESSAGE_TO.TRANSACTION_TIMELINE_SELECT_TRANSACTION);
     }
 
@@ -67,11 +58,21 @@ export class CallTreeContainerComponent implements OnInit, OnDestroy {
     private connectStore(): void {
         this.timezone$ = this.storeHelperService.getTimezone();
         this.dateFormat$ = this.storeHelperService.getDateFormat(this.unsubscribe, 3);
-        this.callTreeData$ = this.storeHelperService.getTransactionDetailData(this.unsubscribe).pipe(
-            filter((transactionDetailInfo: ITransactionDetailData) => {
-                return transactionDetailInfo && transactionDetailInfo.transactionId ? true : false;
-            })
-        );
+
+        if (this.mode === 'source') {
+            this.diffTreeData$ = this.storeHelperService.getTransactionDetailData(this.unsubscribe).pipe(
+                filter((transactionDetailInfo: ITransactionDetailData) => {
+                    return transactionDetailInfo && transactionDetailInfo.transactionId ? true : false;
+                })
+            );
+        }
+        else {
+            this.diffTreeData$ = this.storeHelperService.getDiffDetailData(this.unsubscribe).pipe(
+                filter((diffDetailInfo: ITransactionDetailData) => {
+                    return diffDetailInfo && diffDetailInfo.transactionId ? true : false;
+                })
+            );
+        }
     }
 
     onSelectFormatting({type, originalContents, bindValue}: any): void {
@@ -100,11 +101,11 @@ export class CallTreeContainerComponent implements OnInit, OnDestroy {
         });
     }
 
-    onCellDoubleClicked(contents: any): void {
+    onCellDoubleClicked(contents: string): void {
         this.dynamicPopupService.openPopup({
             data: {
                 title: 'Contents',
-                contents: contents.data[contents.colDef.field]
+                contents
             },
             component: MessagePopupContainerComponent
         }, {

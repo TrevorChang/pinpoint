@@ -23,14 +23,22 @@ import { CallTreeContainerComponent } from 'app/core/components/call-tree/call-t
 })
 export class TransactionListBottomContentsContainerComponent implements OnInit, OnDestroy {
     @ViewChild(CallTreeContainerComponent, {read: ElementRef, static: true}) callTreeComponent: ElementRef;
+    @ViewChild('uploadFileInput', {read: ElementRef, static: true}) uploadFileInput: ElementRef;
     private unsubscribe = new Subject<void>();
 
     activeView: string;
     transactionInfo: ITransactionMetaData;
+    transactionDetail: ITransactionDetailData;
     useDisable = true;
     showLoading = true;
     removeCallTree = false;
     showSearch: boolean;
+
+    showUpload = false;
+    diffDetailInfo: any;
+
+    diffRowName = "executionMilliseconds";
+    diffRowData = [];
 
     constructor(
         private storeHelperService: StoreHelperService,
@@ -60,6 +68,9 @@ export class TransactionListBottomContentsContainerComponent implements OnInit, 
             })
         ).subscribe((viewType: string) => {
             this.activeView = viewType;
+            this.diffDetailInfo = null;
+            this.uploadFileInput.nativeElement.value = '';
+            this.showUpload = this.activeView === 'compare'
             this.showSearch = this.activeView === 'callTree' || this.activeView === 'timeline';
         });
 
@@ -73,6 +84,7 @@ export class TransactionListBottomContentsContainerComponent implements OnInit, 
             tap((transactionInfo: ITransactionMetaData) => this.transactionInfo = transactionInfo),
             switchMap(({agentId, spanId, traceId, collectorAcceptTime}: ITransactionMetaData) => this.transactionDetailDataService.getData(agentId, spanId, traceId, collectorAcceptTime)),
         ).subscribe((transactionDetailInfo: ITransactionDetailData) => {
+            this.transactionDetail = transactionDetailInfo;
             this.storeHelperService.dispatch(new Actions.UpdateTransactionDetailData(transactionDetailInfo));
             this.storeHelperService.dispatch(new Actions.ChangeTransactionViewType('callTree'));
             this.setDisplayGuide(false);
@@ -109,6 +121,54 @@ export class TransactionListBottomContentsContainerComponent implements OnInit, 
                 this.transactionInfo.spanId
             ]
         });
+    }
+
+    onClickExportBtn(): void {
+        console.log(this.transactionDetail);
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.transactionDetail));
+        let downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", this.transactionDetail.transactionId + ".json");
+        document.body.appendChild(downloadAnchorNode); // required for firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    fileChangeListener($event : Event): void {
+        const comparedFile = ($event.target as HTMLInputElement).files[0];
+
+        const fileReader = new FileReader();
+        fileReader.onload = (e) => {
+            this.diffDetailInfo = JSON.parse(<string>fileReader.result);
+            console.log(this.diffDetailInfo);
+            this.storeHelperService.dispatch(new Actions.UpdateDiffDetailData(this.diffDetailInfo));
+
+            // this.updateDiffData();
+        }
+
+        if (comparedFile instanceof ArrayBuffer) {
+            // throw an error, 'cause you can't handle this
+        } else {
+            fileReader.readAsText(comparedFile);
+        }
+    }
+
+    hasDiffData(): boolean {
+        return !!this.diffDetailInfo;
+    }
+
+    private updateDiffData(): void {
+        const colSourceIndex = this.transactionDetail.callStackIndex[this.diffRowName];
+        const colTargetIndex = this.diffDetailInfo.callStackIndex[this.diffRowName];
+        let sourceData = this.transactionDetail.callStack.map(item=>item[colSourceIndex]);
+        let targetData = this.diffDetailInfo.callStack.map(item=>item[colTargetIndex]);
+
+        this.diffRowData = sourceData.map((v, idx)=>({
+            title : this.transactionDetail.callStack[idx][this.transactionDetail.callStackIndex['title']],
+            source : sourceData[idx],
+            target : targetData[idx],
+            diff : !isNaN(sourceData[idx]) && !isNaN(targetData[idx]) ? sourceData[idx] - targetData[idx] : ''
+        }));
     }
 
     onShowHelp($event: MouseEvent): void {

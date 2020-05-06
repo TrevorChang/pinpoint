@@ -1,0 +1,13 @@
+<ng-container *ngIf="(diffTreeData$ | async) as diffTreeData">
+    <pp-diff-tree
+        [canSelectRow]="canSelectRow"
+        [rowSelection]="rowSelection"
+        [selectedRowId]="selectedRowId$ | async"
+        [callTreeData]="diffTreeData"
+        [timezone]="timezone$ | async"
+        [dateFormat]="dateFormat$ | async"
+        (outSelectFormatting)="onSelectFormatting($event)"
+        (outRowSelected)="onRowSelected($event)"
+        (outCellDoubleClicked)="onCellDoubleClicked($event)">
+    </pp-diff-tree>
+</ng-container>

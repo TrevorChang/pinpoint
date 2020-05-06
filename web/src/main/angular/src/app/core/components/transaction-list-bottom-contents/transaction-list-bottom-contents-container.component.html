@@ -3,7 +3,10 @@
     <div class="l-middle-tool-box">
         <pp-transaction-detail-menu-container></pp-transaction-detail-menu-container>
         <pp-transaction-search-container [hidden]="!showSearch"></pp-transaction-search-container>
+        <input #uploadFileInput type="file" [hidden]="!showUpload" (change)="fileChangeListener($event)" />
         <div>
+            <button class="fas fa-download l-middle-tool-box-tip" (click)="onClickExportBtn()"></button>
+            &nbsp;
             <button class="fas fa-external-link-alt l-middle-tool-box-tip" (click)="onOpenTransactionDetailPage()"></button>
             &nbsp;
             <button class="fas fa-question-circle l-middle-tool-box-tip" (click)="onShowHelp($event)"></button>
@@ -20,6 +23,23 @@
             </ng-container>
             <ng-container *ngSwitchCase="'timeline'">
                 <pp-transaction-timeline-container></pp-transaction-timeline-container>    
+            </ng-container>
+            <ng-container *ngSwitchCase="'compare'">
+                <!-- <div class="l-content-section">
+                    <as-split direction="horizontal" unit="percent" >
+                        <as-split-area size="50">
+                            <pp-call-tree-container></pp-call-tree-container>
+                        </as-split-area>
+                        <as-split-area size="50">
+                            <pp-diff-tree-container [hidden]="!hasDiffData()">
+                            </pp-diff-tree-container>
+                        </as-split-area>
+                    </as-split>
+                </div>                 -->
+                <pp-diff-tree-container [mode]="'source'" style="width: 50%; display: inline-block;">
+                </pp-diff-tree-container>
+                <pp-diff-tree-container [hidden]="!hasDiffData()" style="width: 50%;; display: inline-block;">
+                </pp-diff-tree-container>
             </ng-container>
         </ng-container>
     </div>

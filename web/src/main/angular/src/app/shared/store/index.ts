@@ -12,6 +12,7 @@ import * as serverList from './server-list.reducer';
 import * as timeline from './timeline.reducer';
 import * as timezone from './timezone.reducer';
 import * as transactionDetailData from './transaction-detail-data.reducer';
+import * as diffDetailData from './diff-detail-data.reducer';
 import * as transactionData from './transaction-info.reducer';
 import * as serverMapLoadingState from './server-map-loading-state.reducer';
 import * as uiState from './ui-state.reducer';
@@ -28,6 +29,7 @@ export interface AppState {
     agentSelectionForServerList: IAgentSelection;
     transactionData: ITransactionMetaData;
     transactionDetailData: ITransactionDetailData;
+    diffDetailData: ITransactionDetailData;
     applicationList: IApplication[];
     favoriteApplicationList: IApplication[];
     serverList: any;
@@ -51,6 +53,7 @@ export const STORE_KEY = {
     TIMELINE_SELECTION_RANGE: 'timelineSelectionRange',
     TRANSACTION_DATA: 'transactionData',
     TRANSACTION_DETAIL_DATA: 'transactionDetailData',
+    DIFF_DETAIL_DATA: 'diffDetailData',
     APPLICATION_LIST: 'applicationList',
     FAVORITE_APPLICATION_LIST: 'favoriteApplicationList',
     SERVER_LIST: 'serverList',
@@ -82,6 +85,7 @@ export const reducers: ActionReducerMap<any> = {
     timezone: timezone.Reducer,
     transactionData: transactionData.Reducer,
     transactionDetailData: transactionDetailData.Reducer,
+    diffDetailData: diffDetailData.Reducer,
     adminAgentList: admin.Reducer,
     serverAndAgent: serverAndAgent.Reducer,
     uiState: uiState.Reducer,
@@ -101,6 +105,7 @@ export const Actions = {
     'ChangeAgentForServerList': agentSelectionForInfoPerServer.ChangeAgentForServerList,
     'UpdateTransactionData': transactionData.UpdateTransactionData,
     'UpdateTransactionDetailData': transactionDetailData.UpdateTransactionDetailData,
+    'UpdateDiffDetailData': diffDetailData.UpdateDiffDetailData,
     'UpdateApplicationList': applicationList.UpdateApplicationList,
     'AddFavoriteApplication': favoriteApplicationList.AddFavoriteApplication,
     'RemoveFavoriteApplication': favoriteApplicationList.RemoveFavoriteApplication,
