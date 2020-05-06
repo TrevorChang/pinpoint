@@ -4,6 +4,8 @@ import { takeUntil, map, take } from 'rxjs/operators';
 
 import { Actions } from 'app/shared/store';
 import { UrlPathId } from 'app/shared/models';
+import { EndTime } from 'app/core/models/end-time';
+import { ServerTimeDataService } from 'app/shared/services/server-time-data.service';
 import { StoreHelperService, NewUrlStateNotificationService, UrlRouteManagerService, AnalyticsService, TRACKED_EVENT_LIST, MessageQueueService, MESSAGE_TO } from 'app/shared/services';
 import { ServerMapData } from 'app/core/components/server-map/class/server-map-data.class';
 // import { ScatterChartDataService } from 'app/core/components/scatter-chart/scatter-chart-data.service';
@@ -34,6 +36,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         private newUrlStateNotificationService: NewUrlStateNotificationService,
         private urlRouteManagerService: UrlRouteManagerService,
         private analyticsService: AnalyticsService,
+        private serverTimeDataService: ServerTimeDataService,
         private cd: ChangeDetectorRef,
         private messageQueueService: MessageQueueService,
     ) {}
@@ -74,7 +77,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         const hasKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.has(UrlPathId.URLPATTERN);
         if (hasKeyword) {
             this.filterKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLPATTERN);
-            this.filterKeyword = decodeURI(this.filterKeyword);
+            this.filterKeyword = decodeURIComponent(this.filterKeyword);
         }
     }
 
@@ -140,14 +143,18 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
         const startPath = this.newUrlStateNotificationService.getStartPath();
         const applicationPath = this.newUrlStateNotificationService.getPathValue(UrlPathId.APPLICATION).getUrlStr();
         const priod = this.newUrlStateNotificationService.getPathValue(UrlPathId.PERIOD).getValueWithTime();
-        const baseUrl = [startPath, applicationPath, priod];
-        const finalUrl  = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : [];
 
-        this.urlRouteManagerService.move({
-            url: baseUrl,
-            needServerTimeRequest: true,
-            nextUrl: finalUrl,
-            queryParam: { urlPattern: encodeURI(this.filterKeyword)}
+        this.serverTimeDataService.getServerTime().subscribe(time => {
+            const endTime = EndTime.formatDate(time);
+            const baseUrl = [startPath, applicationPath, priod, endTime];
+            const finalUrl  = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : [];
+
+            this.urlRouteManagerService.move({
+                url: baseUrl,
+                needServerTimeRequest: false,
+                nextUrl: finalUrl,
+                queryParam: { urlPattern: this.filterKeyword }
+            });
         });
     }
 }

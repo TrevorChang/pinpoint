@@ -53,7 +53,7 @@ export class ScatterChartDataService {
             tap((params: IScatterRequest) => {
                 const urlPatternString = location.search.split(/[\?|\&]/).find(res => (res.startsWith('urlPattern')));
                 if (urlPatternString) {
-                    params.urlPattern = urlPatternString.split('=')[1];
+                    params.urlPattern = decodeURIComponent(urlPatternString.split('=')[1]);
                 }
             }),
             switchMap((params: IScatterRequest) => {
