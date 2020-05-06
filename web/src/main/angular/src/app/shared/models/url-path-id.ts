@@ -69,6 +69,7 @@ export class UrlGeneral<T> implements IUrlPathId<T> {
 
 export class UrlPathId {
     static APPLICATION = 'application';
+    static URLPATTERN = 'urlPattern';
     static PERIOD = 'period';
     static END_TIME = 'endTime';
     // static FILTER = 'filter';

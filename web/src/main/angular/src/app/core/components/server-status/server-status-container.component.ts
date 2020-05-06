@@ -1,10 +1,14 @@
 import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { Subject, combineLatest } from 'rxjs';
-import { takeUntil, filter, map, take } from 'rxjs/operators';
+import { takeUntil, map, take } from 'rxjs/operators';
 
 import { Actions } from 'app/shared/store';
+import { UrlPathId } from 'app/shared/models';
+import { EndTime } from 'app/core/models/end-time';
+import { ServerTimeDataService } from 'app/shared/services/server-time-data.service';
 import { StoreHelperService, NewUrlStateNotificationService, UrlRouteManagerService, AnalyticsService, TRACKED_EVENT_LIST, MessageQueueService, MESSAGE_TO } from 'app/shared/services';
 import { ServerMapData } from 'app/core/components/server-map/class/server-map-data.class';
+// import { ScatterChartDataService } from 'app/core/components/scatter-chart/scatter-chart-data.service';
 
 @Component({
     selector: 'pp-server-status-container',
@@ -24,12 +28,15 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
     hasServerList = false;
     isWAS: boolean;
     spreadAngleIndicator: string;
+    filterKeyword = '';
+    errorMsg = '';
 
     constructor(
         private storeHelperService: StoreHelperService,
         private newUrlStateNotificationService: NewUrlStateNotificationService,
         private urlRouteManagerService: UrlRouteManagerService,
         private analyticsService: AnalyticsService,
+        private serverTimeDataService: ServerTimeDataService,
         private cd: ChangeDetectorRef,
         private messageQueueService: MessageQueueService,
     ) {}
@@ -44,6 +51,7 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
             this.cd.detectChanges();
         });
         this.listenToEmitter();
+        this.initKeyword();
     }
 
     ngOnDestroy() {
@@ -63,6 +71,14 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
             this.node = (target.isNode === true ? this.serverMapData.getNodeData(target.node[0]) as INodeInfo : null);
             this.cd.detectChanges();
         });
+    }
+
+    private initKeyword(): void {
+        const hasKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.has(UrlPathId.URLPATTERN);
+        if (hasKeyword) {
+            this.filterKeyword = this.newUrlStateNotificationService.getPrevPageUrlInfo().queryParams.get(UrlPathId.URLPATTERN);
+            this.filterKeyword = decodeURIComponent(this.filterKeyword);
+        }
     }
 
     set isInfoPerServerShow(show: boolean) {
@@ -95,6 +111,50 @@ export class ServerStatusContainerComponent implements OnInit, OnDestroy {
             take(1),
         ).subscribe(([isRealTimeMode, selectedAgent]: [boolean, string]) => {
             this.urlRouteManagerService.openInspectorPage(isRealTimeMode, selectedAgent);
+        });
+    }
+
+    onCleanKeyword(): void {
+        this.filterKeyword = '';
+        this.errorMsg = '';
+    }
+
+    onCheckInputField(event: any): void {
+        const regex = /[a-zA-Z0-9\/\*]+/gy;
+        if (this.filterKeyword.trim() === '') {
+            this.errorMsg = '';
+            return;
+        }
+        if (event.key === 'Enter') {
+            return this.onFilterByUrlParttern(event.target.value);
+        }
+        if (regex.test(this.filterKeyword) === false) {
+            this.errorMsg = 'the URL Parttern has some error';
+        } else {
+            this.errorMsg = '';
+        }
+    }
+
+    onFilterByUrlParttern(value?: string): void {
+        if (this.errorMsg !== '') {
+            this.filterKeyword = (value !== undefined) ? value : '';
+            return;
+        }
+        const startPath = this.newUrlStateNotificationService.getStartPath();
+        const applicationPath = this.newUrlStateNotificationService.getPathValue(UrlPathId.APPLICATION).getUrlStr();
+        const priod = this.newUrlStateNotificationService.getPathValue(UrlPathId.PERIOD).getValueWithTime();
+
+        this.serverTimeDataService.getServerTime().subscribe(time => {
+            const endTime = EndTime.formatDate(time);
+            const baseUrl = [startPath, applicationPath, priod, endTime];
+            const finalUrl  = this.newUrlStateNotificationService.hasValue(UrlPathId.AGENT_ID) ? [this.newUrlStateNotificationService.getPathValue(UrlPathId.AGENT_ID)] : [];
+
+            this.urlRouteManagerService.move({
+                url: baseUrl,
+                needServerTimeRequest: false,
+                nextUrl: finalUrl,
+                queryParam: { urlPattern: this.filterKeyword }
+            });
         });
     }
 }
